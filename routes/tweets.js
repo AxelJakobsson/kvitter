@@ -6,9 +6,6 @@ import bcrypt, { hash } from "bcrypt";
 const router = express.Router()
 
 
-
-
-
 router.post("/delete", async (req, res) => {
     const id = req.body.id
 
@@ -34,10 +31,16 @@ router.get('/tweets/:id/delete', async (req, res) => {
 
 
 // Router to create tweet page
-router.get("/create", (req, res) => {
-    res.render("create.njk", {
+router.get("/create", async (req, res) => {
+    if (!req.session.loggedIn) {
+        console.log("Not logged in")
+        return res.redirect("/login")
+    }
+    else {
+        res.render("create.njk", {
         title: "Kvitter",
     })
+    }
 });
 
 // Post the new tweet to the database with the message and author_id connected. 
@@ -51,13 +54,6 @@ router.post("/create", async (req, res) => {
     await pool.promise().query("INSERT INTO tweet (message, author_id) VALUES (?, ?)", [message, author_id]);
     res.redirect("/")
 })
-
-
-
-
-
-
-
 
 
 export default router
