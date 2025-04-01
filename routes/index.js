@@ -3,6 +3,8 @@ import pool from "../db.js"
 import bodyParser from "body-parser"
 import bcrypt, { hash } from "bcrypt";
 
+import { body, matchedData, validationResult } from "express-validator"
+
 const router = express.Router()
 const saltRounds = 10
 
@@ -28,6 +30,59 @@ router.get("/tweets", async (req, res) => {
         message: "Bästa hemsidan",
         tweets: tweets,
     })
+})
+
+
+router.post("/delete", async (req, res) => {
+    const id = req.body.id
+
+    await pool.promise().query("DELETE FROM tweet WHERE id = ?", [id])
+    res.redirect("/")
+})
+
+
+router.get('/tweets/:id/delete', async (req, res) => {
+    const [tweetID] = await pool.promise().query(`SELECT id FROM tweet WHERE id = ?`, [req.params.id]);
+    if(tweetID.length === 0) { // Make sure the tweet id is valid
+        return res.render("failed.njk")
+    }
+
+    const [tweetsOut] = await pool.promise().query(`DELETE FROM tweet WHERE id = ?;`,
+    [req.params.id],
+    )
+    res.render("tweets_delete.njk", {
+        tweetsOut:tweetsOut,
+    })
+});
+
+
+
+// Router to create tweet page
+router.get("/create", async (req, res) => {
+    if (!req.session.loggedIn) {
+        console.log("Not logged in")
+        return res.redirect("/login")
+    }
+    else {
+        res.render("create.njk", {
+        title: "Kvitter",
+    })
+    }
+});
+
+// Post the new tweet to the database with the message and author_id connected. 
+router.post("/create", async (req, res) => {
+    const { message } = req.body
+    const [[author]] = await pool.promise().query(`SELECT id FROM user WHERE name = ?`, [req.session.name]);
+    const author_id = author.id;
+    // const [accounts] = await pool.promise().query(`SELECT id FROM user WHERE id = ?`, [author_id]);
+    
+
+    // if (accounts.length === 0) {
+    //     return res.render("failed.njk");
+    // }
+    await pool.promise().query("INSERT INTO tweet (message, author_id) VALUES (?, ?)", [message, author_id]);
+    res.redirect("/")   
 })
 
 router.post("/createNoID", async (req, res) => {
@@ -97,7 +152,7 @@ router.get("/createAccount", (req, res) => {
 router.post("/createAccount", async (req, res) => {
     const { name, password } = req.body;
   
-    const [users] = await pool.promise().query("SELECT * FROM User WHERE name = ?", [name]);
+    const [users] = await pool.promise().query("SELECT * FROM user WHERE name = ?", [name]);
     if (users.length > 0) {
       return res.status(400).send("User already exists");
     }

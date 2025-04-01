@@ -20,7 +20,7 @@ nunjucks.configure("views", {
     express: app,
 })
 app.use(express.static("public"))
-app.use(morgan("dev"))
+app.use(morgan(':date[clf] ":method :url"'))
 app.use(bodyParser.urlencoded( { extended: true}))
 
 app.use(session({
