@@ -72,15 +72,18 @@ router.get("/create", async (req, res) => {
 
 // Post the new tweet to the database with the message and author_id connected. 
 router.post("/create", async (req, res) => {
+    if (!req.session.loggedIn) {
+        return res.status(401).send("Not logged in")
+    }
     const { message } = req.body
     const [[author]] = await pool.promise().query(`SELECT id FROM user WHERE name = ?`, [req.session.name]);
     const author_id = author.id;
     // const [accounts] = await pool.promise().query(`SELECT id FROM user WHERE id = ?`, [author_id]);
     
 
-    // if (accounts.length === 0) {
-    //     return res.render("failed.njk");
-    // }
+    if (author.length === 0) {
+        return res.status.send("Invalid user");
+    }
     await pool.promise().query("INSERT INTO tweet (message, author_id) VALUES (?, ?)", [message, author_id]);
     res.redirect("/")   
 })
