@@ -63,6 +63,13 @@ router.get('/tweets/:id/delete', async (req, res) => {
     })
 });
 
+router.post("/tweets/delete", async (req, res) => {
+    const id = req.body.id
+
+    await db.all(`DELETE FROM tweet WHERE id = ?`, id)
+    res.redirect("/")
+})
+
 
 
 // Router to create tweet page
