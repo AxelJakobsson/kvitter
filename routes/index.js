@@ -32,6 +32,15 @@ router.get("/show", async (req, res) => {
     })
 })
 
+router.get("/tables", async (req, res) => {
+    const tables = await db.all (`SELECT * FROM user`)
+
+    res.render("index.njk", {
+        title: tables,
+        message: tables,
+    })
+})
+
 router.get("/tweets", async (req, res) => {
     const tweets = await db.all(`SELECT tweet.*, user.name FROM tweet JOIN user ON tweet.author_id = user.id;`)
 

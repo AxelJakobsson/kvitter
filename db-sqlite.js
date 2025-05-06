@@ -21,8 +21,8 @@ await db.exec(`
 await db.exec(`
   CREATE TABLE IF NOT EXISTS user (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT
-    hashed varchar(255)
+    name VARCHAR(255),
+    hashed VARCHAR(255)
   );
 `);
 
