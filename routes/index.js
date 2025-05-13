@@ -22,18 +22,8 @@ router.get("/", async (req, res) => {
     })
 })
 
-router.get("/show", async (req, res) => {
-    const tweets = await db.all(`SELECT tweet.*, user.name FROM user JOIN tweet WHERE tweet.author_id = user.id;`)
-
-    res.render("index.njk", {
-        title: "Kvitter",
-        message: "Bästa hemsidan",
-        tweets: tweets,
-    })
-})
-
 router.get("/tables", async (req, res) => {
-    const tables = await db.all (`SELECT * FROM user`)
+    const tables = await db.all (`SELECT * FROM tweet`)
 
     res.render("index.njk", {
         title: tables,
@@ -51,32 +41,101 @@ router.get("/tweets", async (req, res) => {
     })
 })
 
+// router.get('/tweets/:id/delete', async (req, res) => {
+//     const tweetID = await db.all(`SELECT id FROM tweet WHERE id = ?`, req.params.id)
+//     if(tweetID.length === 0) { // Make sure the tweet id is valid
+//         return res.render("failed.njk")
+//     }
 
-router.post("/delete", async (req, res) => {
-    const id = req.body.id
+//     const tweetsOut = await db.all(`SELECT FROM tweet WHERE ID = ?;`, req.params.id)
+//     res.render("tweets_delete.njk", {
+//         tweetsOut:tweetsOut,
+//     })
+// });
 
-    await db.run('DELETE FROM tweet WHERE id = ?', id)
-    res.redirect("/")
-})
-
-
-router.get('/tweets/:id/delete', async (req, res) => {
-    const tweetID = await db.all(`SELECT id FROM tweet WHERE id = ?`, req.params.id)
-    if(tweetID.length === 0) { // Make sure the tweet id is valid
-        return res.render("failed.njk")
+router.get('/tweets/edit', async (req, res) => {
+    const user = await db.all(`SELECT id FROM user WHERE name = ?`, req.session.name);
+    
+    
+    if (user.length === 0) {
+        return res.status(400).send("User not found");
     }
 
-    const tweetsOut = await db.all(`SELECT FROM tweet WHERE ID = ?;`, req.params.id)
-    res.render("tweets_delete.njk", {
-        tweetsOut:tweetsOut,
-    })
-});
+    const tweet = await db.all(`SELECT author_id FROM tweet WHERE id = ?`, req.query.id)
+    const message = await db.all(`SELECT message FROM tweet WHERE id = ?`, req.query.id)
+
+    const user_id = user[0].id;
+    const author_id = tweet[0].author_id;
+    const previousMessage = message[0].message;
+
+    if (user_id == author_id) {
+        console.log("authorized")
+
+        res.render('edit.njk', {
+            previousMessage: previousMessage
+        })
+    }
+    else {
+        console.log("not matching author")
+        return res.status(400).send("Not authorized");
+    }
+})
+
+router.post("/tweets/edit", async (req, res) => {
+
+    console.log(req.query.id)
+    console.log(req.session.name)
+    console.log(req.body.id)
+    const user = await db.all(`SELECT id FROM user WHERE name = ?`, req.session.name);
+    
+    if (user.length === 0) {
+        return res.status(400).send("User not found");
+    }
+
+    
+    const message = req.body.message;
+
+    console.log(await db.all(`SELECT * FROM tweet`))
+    const user_id = user[0].id;
+    console.log(user_id)
+    console.log(await db.all(`SELECT author_id FROM tweet WHERE id = ?`, req.query.id))
+    const tweet = await db.all(`SELECT author_id FROM tweet WHERE id = ?`, user_id)
+    const author_id = tweet[0].author_id;
+
+    if (user_id == author_id) {
+        console.log("edited")
+
+        await db.run('UPDATE tweet SET message = ? WHERE id = ?', message, req.body.id)
+        res.redirect("/")
+    }
+    else {
+        console.log("not matching author")
+        return res.status(400).send("Not authorized");
+    }
+})
 
 router.post("/tweets/delete", async (req, res) => {
-    const id = req.body.id
+    const user = await db.all(`SELECT id FROM user WHERE name = ?`, req.session.name);
+    
+    if (user.length === 0) {
+        return res.status(400).send("User not found");
+    }
 
-    await db.all(`DELETE FROM tweet WHERE id = ?`, id)
-    res.redirect("/")
+    const tweet = await db.all(`SELECT author_id FROM tweet WHERE id = ?`, req.body.id)
+
+    const user_id = user[0].id;
+    const author_id = tweet[0].author_id;
+
+    if (user_id == author_id) {
+        console.log("deleted")
+
+        await db.run('DELETE FROM tweet WHERE id = ?', req.body.id)
+        res.redirect("/")
+    }
+    else {
+        console.log("not matching author")
+        return res.status(400).send("Not authorized");
+    }
 })
 
 
@@ -97,7 +156,7 @@ router.get("/create", async (req, res) => {
 // Post the new tweet to the database with the message and author_id connected. 
 router.post("/create", async (req, res) => {
     if (!req.session.loggedIn) {
-        return res.status(401).send("Not logged in")
+        return res.status(400).send("Not logged in")
     }
     const { message } = req.body
     const author = await db.all(`SELECT id FROM user WHERE name = ?`, req.session.name);
@@ -114,13 +173,6 @@ router.post("/create", async (req, res) => {
     res.redirect("/")   
 })
 
-router.post("/createNoID", async (req, res) => {
-    const { message } = req.body
-    const author_id = 6
-    await db.run('INSERT INTO tweet (message, author_id) VALUES (?, ?)', message, author_id)
-
-    res.redirect("/")
-})
 
 router.get("/accounts", async (req, res) => {
     const accounts = await db.all(`SELECT user.* FROM user`)
@@ -169,7 +221,7 @@ router.post("/login", async (req, res) => {
             res.redirect("/")
         }
         else {
-            res.sendStatus(401)
+            res.sendStatus(400)
         }
     })
 })

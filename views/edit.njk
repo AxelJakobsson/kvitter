@@ -5,11 +5,11 @@
 <form action="/tweets/edit" method="post">
     <input type="hidden" name="id" value="{{ tweet.id }}">
     <label for="message">Message</label>
-    <textarea id="message" name="message" required>{{ tweet.message }}</textarea>
+    <textarea id="message" name="message" required>{{ previousMessage }}</textarea>
     <button type="submit">Edit</button>
 </form>
 
-<h3>Previous message: <h3>
-    <textarea name="message" id="message">{{ tweet.message }}</textarea>
+<!-- <h3>Previous message: <h3>
+    <textarea name="message" id="message">{{ previousMessage  }}</textarea> -->
 
 {% endblock %}
