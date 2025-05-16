@@ -41,20 +41,9 @@ router.get("/tweets", async (req, res) => {
     })
 })
 
-// router.get('/tweets/:id/delete', async (req, res) => {
-//     const tweetID = await db.all(`SELECT id FROM tweet WHERE id = ?`, req.params.id)
-//     if(tweetID.length === 0) { // Make sure the tweet id is valid
-//         return res.render("failed.njk")
-//     }
-
-//     const tweetsOut = await db.all(`SELECT FROM tweet WHERE ID = ?;`, req.params.id)
-//     res.render("tweets_delete.njk", {
-//         tweetsOut:tweetsOut,
-//     })
-// });
-
 router.get('/tweets/edit', async (req, res) => {
     const user = await db.all(`SELECT id FROM user WHERE name = ?`, req.session.name);
+    console.log("Editing tweet with id:", req.query.id);
     
     
     if (user.length === 0) {
@@ -99,7 +88,8 @@ router.post("/tweets/edit", async (req, res) => {
     const user_id = user[0].id;
     console.log(user_id)
     console.log(await db.all(`SELECT author_id FROM tweet WHERE id = ?`, req.query.id))
-    const tweet = await db.all(`SELECT author_id FROM tweet WHERE id = ?`, user_id)
+    const tweet = await db.all(`SELECT author_id FROM tweet WHERE id = ?`, req.body.id)
+
     const author_id = tweet[0].author_id;
 
     if (user_id == author_id) {
